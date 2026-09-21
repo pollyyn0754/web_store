@@ -1,0 +1,21 @@
+# coding: utf-8
+from catalog.models import Category, Product
+category1 = Category.objects.create(name='Шаблоны и темы', description='Готовый визуал и вёрстка, которые можно сразу использовать или адаптировать под бренд. Экономия на дизайнере и верстальщике, быстрый запуск сайта или презентации.')
+category2 = Category.objects.create(name='Готовые решения (скрипты)', description='Полноценные приложения и сервисы «под ключ»: от идеи до продакшена. Покупатель получает исходный код, документацию и возможность ребрендинга. Идеально для быстрого запуска бизнеса или MVP.')
+product1 = Product.objects.create(name='HTML/CSS шаблоны', description='Адаптивные лендинги, корпоративные сайты, портфолио.', category=category1, price=10000)
+product2 = Product.objects.create(name='Презентации', description='PowerPoint, Keynote, Google Slides. Бизнес, питчи, отчёты, обучение.', category=category1, price=5000)
+product3 = Product.objects.create(name='Figma/PSD макеты', description='UI-киты, лендинги, мобильные приложения, дашборды.', category=category1, price=10000)
+product4 = Product.objects.create(name='CRM-системы', description='Управлене клиентами, сделками, задачами, отчётами.', category=category2, price=100000)
+product5 = Product.objects.create(name='Парсеры и боты', description='Cбор данных, мониторинг цен, автоматизация рутины.', category=category2, price=15000)
+product6 = Product.objects.create(name='Чат-виджеты', description='Oнлайн-кoнсультанты, AI-ассистенты, мультиканальные чаты.', category=category2, price=100000)
+categories = Category.objects.all()
+print(categories)
+products = Product.objects.all()
+print(products)
+products_category1 = Product.objects.filter(category=category1)
+print(products_category1)
+print(Product.objects.get(name='HTML/CSS шаблоны').price)
+Product.objects.get(name='HTML/CSS шаблоны').update(price=12000)
+print(Product.objects.get(name='HTML/CSS шаблоны').price)
+product = Product.objects.get(name='HTML/CSS шаблоны')
+product.prise = 12000
