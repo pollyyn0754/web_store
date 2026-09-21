@@ -8,15 +8,18 @@ from .models import Product, Contact
 
 
 def home(request):
-    # Последние 5 созданных продуктов (сортировка по дате создания по убыванию)
+    # Последние 5 созданных продуктов: сортировка по дате создания по убыванию, срез [:5]
     latest_products = Product.objects.order_by('-created_at')[:5]
 
     # Вывод в консоль
     print('Последние 5 созданных продуктов:')
     for product in latest_products:
-        print(f'  #{product.pk} {product.name} — {product.price} ({product.created_at})')
+        print(
+            f'  #{product.pk} | {product.name} | '
+            f'{product.price} ₽ | {product.created_at:%d.%m.%Y %H:%M}'
+        )
 
-    return render(request, "home.html")
+    return render(request, "home.html", {"latest_products": latest_products})
 
 
 def contacts(request):
