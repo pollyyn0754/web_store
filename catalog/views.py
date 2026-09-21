@@ -1,25 +1,42 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
+from django.core.paginator import Paginator
 
-from .forms import ContactForm
+from .forms import ContactForm, ProductForm
 from .models import Product, Contact
 
 
 def home(request):
-    # Последние 5 созданных продуктов: сортировка по дате создания по убыванию, срез [:5]
-    latest_products = Product.objects.order_by('-created_at')[:5]
+    """Главная страница с пагинацией списка товаров."""
+    products = Product.objects.order_by('-created_at')
+    paginator = Paginator(products, 6)  # по 6 товаров на страницу
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-    # Вывод в консоль
-    print('Последние 5 созданных продуктов:')
-    for product in latest_products:
-        print(
-            f'  #{product.pk} | {product.name} | '
-            f'{product.price} ₽ | {product.created_at:%d.%m.%Y %H:%M}'
-        )
+    return render(request, "catalog/home.html", {"page_obj": page_obj})
 
-    return render(request, "home.html", {"latest_products": latest_products})
+
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    return render(request, "catalog/product_detail.html", {"product": product})
+
+
+def product_create(request):
+    """Добавление нового товара."""
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f'Товар «{product.name}» успешно добавлен!')
+            return redirect('catalog:product_detail', pk=product.pk)
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+    else:
+        form = ProductForm()
+
+    return render(request, "catalog/product_form.html", {"form": form})
 
 
 def contacts(request):
@@ -36,11 +53,10 @@ def contacts(request):
     else:
         form = ContactForm()
 
-    # Данные из админки (первая запись контактов)
     contact_info = Contact.objects.first()
 
     return render(
         request,
-        "contacts.html",
+        "catalog/contacts.html",
         {"form": form, "contact_info": contact_info},
     )
