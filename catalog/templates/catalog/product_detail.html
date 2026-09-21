@@ -1,0 +1,53 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}{{ product.name }} — Skystore{% endblock %}
+
+{% block content %}
+<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+    <h1 class="display-4">{{ product.name }}</h1>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card box-shadow">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
+                         style="height: 300px;">
+                        <span>Изображение отсутствует</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card box-shadow">
+                <div class="card-body">
+                    <h3 class="card-title">{{ product.name }}</h3>
+                    <h2 class="text-primary">{{ product.price }} ₽</h2>
+                    <p class="card-text">{{ product.description|default:"Описание отсутствует." }}</p>
+
+                    <table class="table table-striped mt-3">
+                        <tr>
+                            <td class="w-50">Категория</td>
+                            <td>{{ product.category.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Дата создания</td>
+                            <td>{{ product.created_at|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td>Последнее изменение</td>
+                            <td>{{ product.updated_at|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                    </table>
+
+                    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">← Назад в каталог</a>
+                    <button type="button" class="btn btn-lg btn-outline-primary">Купить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
