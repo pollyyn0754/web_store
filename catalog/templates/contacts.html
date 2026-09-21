@@ -36,26 +36,34 @@
     {% endif %}
 
     <div class="row text-start">
-        <div class="col-lg-9 col-md-6 col-sm-12">
-            <div class="card mb-4 box-shadow">
-                <div class="card-body">
-                    <table class="table table-striped">
+    <div class="col-lg-9 col-md-6 col-sm-12">
+        <div class="card mb-4 box-shadow">
+            <div class="card-body">
+                <table class="table table-striped">
+                    {% if contact_info %}
                         <tr>
                             <td class="w-25">Страна</td>
-                            <td>USA</td>
+                            <td>{{ contact_info.country }}</td>
                         </tr>
                         <tr>
                             <td class="w-25">ИНН</td>
-                            <td>91-1144442</td>
+                            <td>{{ contact_info.inn }}</td>
                         </tr>
                         <tr>
                             <td class="w-25">Адрес</td>
-                            <td>Redmond, WA, 98052-6399</td>
+                            <td>{{ contact_info.address }}</td>
                         </tr>
-                    </table>
-                </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="2" class="text-muted">
+                                Контактные данные пока не заполнены.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </table>
             </div>
         </div>
+    </div>
         <div class="col-lg-3 col-md-6 col-sm-12">
             <div class="card mb-4 box-shadow">
                 <div class="card-header">

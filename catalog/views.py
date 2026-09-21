@@ -4,9 +4,18 @@ from django.urls import reverse
 from django.contrib import messages
 
 from .forms import ContactForm
+from .models import Product, Contact
 
 
 def home(request):
+    # Последние 5 созданных продуктов (сортировка по дате создания по убыванию)
+    latest_products = Product.objects.order_by('-created_at')[:5]
+
+    # Вывод в консоль
+    print('Последние 5 созданных продуктов:')
+    for product in latest_products:
+        print(f'  #{product.pk} {product.name} — {product.price} ({product.created_at})')
+
     return render(request, "home.html")
 
 
@@ -14,15 +23,21 @@ def contacts(request):
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
-
-            # Добавляем сообщение об успехе
-            messages.success(request, "Ваше сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.")
-
-            # Перенаправляем на страницу контактов для избежания повторной отправки
+            messages.success(
+                request,
+                "Ваше сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время."
+            )
             return HttpResponseRedirect(reverse('catalog:contacts'))
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
     else:
         form = ContactForm()
 
-    return render(request, "contacts.html", {"form": form})
+    # Данные из админки (первая запись контактов)
+    contact_info = Contact.objects.first()
+
+    return render(
+        request,
+        "contacts.html",
+        {"form": form, "contact_info": contact_info},
+    )
