@@ -1,46 +1,60 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
 from django.contrib import messages
-from django.core.paginator import Paginator
+from django.views.generic import (
+    ListView, DetailView, CreateView, TemplateView, View
+)
+from django.http import HttpResponseRedirect
 
 from .forms import ContactForm, ProductForm
 from .models import Product, Contact
 
 
-def home(request):
+class HomeView(ListView):
     """Главная страница с пагинацией списка товаров."""
-    products = Product.objects.order_by('-created_at')
-    paginator = Paginator(products, 6)  # по 6 товаров на страницу
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, "catalog/home.html", {"page_obj": page_obj})
-
-
-def product_detail(request, pk):
-    product = get_object_or_404(Product, pk=pk)
-    return render(request, "catalog/product_detail.html", {"product": product})
+    model = Product
+    template_name = "catalog/home.html"
+    context_object_name = "page_obj"
+    paginate_by = 6
+    ordering = ['-created_at']
 
 
-def product_create(request):
-    """Добавление нового товара."""
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            product = form.save()
-            messages.success(request, f'Товар «{product.name}» успешно добавлен!')
-            return redirect('catalog:product_detail', pk=product.pk)
-        else:
-            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
-    else:
-        form = ProductForm()
-
-    return render(request, "catalog/product_form.html", {"form": form})
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = "catalog/product_detail.html"
+    context_object_name = "product"
 
 
-def contacts(request):
-    if request.method == "POST":
+class ProductCreateView(CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "catalog/product_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f'Товар «{self.object.name}» успешно добавлен!'
+        )
+        return response
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Пожалуйста, исправьте ошибки в форме.')
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('catalog:product_detail', kwargs={'pk': self.object.pk})
+
+
+class ContactsView(View):
+    """Страница контактов: отображение формы и обработка POST."""
+
+    def get(self, request, *args, **kwargs):
+        form = ContactForm()
+        contact_info = Contact.objects.first()
+        return self._render(request, form, contact_info)
+
+    def post(self, request, *args, **kwargs):
         form = ContactForm(request.POST)
         if form.is_valid():
             messages.success(
@@ -48,15 +62,14 @@ def contacts(request):
                 "Ваше сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время."
             )
             return HttpResponseRedirect(reverse('catalog:contacts'))
-        else:
-            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
-    else:
-        form = ContactForm()
+        messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+        contact_info = Contact.objects.first()
+        return self._render(request, form, contact_info)
 
-    contact_info = Contact.objects.first()
-
-    return render(
-        request,
-        "catalog/contacts.html",
-        {"form": form, "contact_info": contact_info},
-    )
+    def _render(self, request, form, contact_info):
+        from django.shortcuts import render
+        return render(
+            request,
+            "catalog/contacts.html",
+            {"form": form, "contact_info": contact_info},
+        )
