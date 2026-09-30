@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
@@ -41,7 +41,7 @@ class BlogPostDetailView(DetailView):
                     subject='Поздравляем! Статья достигла 100 просмотров',
                     message=(
                         f'Статья «{obj.title}» достигла 100 просмотров!\n\n'
-                        f'Ссылка: /blog/{obj.pk}/'
+                        f'Ссылка: {reverse("blog:post_detail", kwargs={"pk": obj.pk})}'
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[settings.DEFAULT_FROM_EMAIL],
