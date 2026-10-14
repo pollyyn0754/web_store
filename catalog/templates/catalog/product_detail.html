@@ -43,8 +43,14 @@
                         </tr>
                     </table>
 
-                    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">← Назад в каталог</a>
-                    <button type="button" class="btn btn-lg btn-outline-primary">Купить</button>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">← Назад в каталог</a>
+                            <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-outline-primary">Редактировать</a>
+                            <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-outline-danger">Удалить</a>
+                        </div>
+                        <button type="button" class="btn btn-lg btn-outline-primary">Купить</button>
+                    </div>
                 </div>
             </div>
         </div>
