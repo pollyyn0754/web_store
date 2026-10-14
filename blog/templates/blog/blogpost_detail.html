@@ -1,0 +1,24 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}{{ post.title }} — Блог{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card box-shadow">
+        <div class="card-body">
+            <h1 class="card-title">{{ post.title }}</h1>
+            <p class="text-muted">
+                {{ post.created_at|date:"d.m.Y H:i" }} · просмотров: {{ post.views_count }}
+            </p>
+            {% if post.preview %}
+                <img src="{{ post.preview.url }}" class="img-fluid mb-3" alt="{{ post.title }}">
+            {% endif %}
+            <p class="card-text">{{ post.content|linebreaks }}</p>
+
+            <a href="{% url 'blog:post_list' %}" class="btn btn-outline-secondary">← К списку</a>
+            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-outline-primary">Редактировать</a>
+            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-outline-danger">Удалить</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
