@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
@@ -18,13 +19,13 @@ class HomeView(ListView):
     ordering = ['-created_at']
 
 
-class ProductDetailView(DetailView):
+class ProductDetailView(LoginRequiredMixin, DetailView):
     model = Product
     template_name = "catalog/product_detail.html"
     context_object_name = "product"
 
 
-class ProductCreateView(CreateView):
+class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = "catalog/product_form.html"
@@ -61,7 +62,7 @@ class ProductUpdateView(UpdateView):
         return reverse('catalog:product_detail', kwargs={'pk': self.object.pk})
 
 
-class ProductDeleteView(DeleteView):
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
     """Удаление продукта с подтверждением."""
     model = Product
     template_name = "catalog/product_confirm_delete.html"

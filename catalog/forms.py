@@ -91,23 +91,20 @@ class ProductForm(forms.ModelForm):
     def clean_image(self):
         image = self.cleaned_data.get('image')
 
-        # Если поле не передано (например, при редактировании без замены картинки) — ок
         if not image:
             return image
 
-        # Проверка формата
-        allowed_formats = {'JPEG', 'JPG', 'PNG'}
-        # image может быть InMemoryUploadedFile / TemporaryUploadedFile
+        # Проверка расширения
         ext = os.path.splitext(image.name)[1].lower().lstrip('.')
         if ext not in {'jpg', 'jpeg', 'png'}:
             raise ValidationError('Допустимы только файлы форматов JPEG и PNG.')
 
-        # Проверка размера (не более 5 МБ)
+        # Проверка размера — не более 5 МБ
         max_size = 5 * 1024 * 1024
         if image.size > max_size:
             raise ValidationError('Размер файла не должен превышать 5 МБ.')
 
-        # Дополнительно проверим MIME, если доступен
+        # Дополнительная проверка MIME (если доступен)
         content_type = getattr(image, 'content_type', '')
         if content_type and content_type not in {'image/jpeg', 'image/png'}:
             raise ValidationError('Допустимы только изображения JPEG или PNG.')
