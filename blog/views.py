@@ -1,0 +1,105 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.mail import send_mail
+from django.conf import settings
+from django.shortcuts import redirect
+from django.urls import reverse_lazy, reverse
+from django.views.generic import (
+    ListView, DetailView, CreateView, UpdateView, DeleteView
+)
+
+from .models import BlogPost
+from .forms import BlogPostForm
+
+
+class BlogPostListView(ListView):
+    """Список только опубликованных статей."""
+    model = BlogPost
+    template_name = 'blog/blogpost_list.html'
+    context_object_name = 'posts'
+    paginate_by = 6
+
+    def get_queryset(self):
+        # Фильтрация: показываем только опубликованные статьи
+        return BlogPost.objects.filter(is_published=True)
+
+
+class BlogPostDetailView(DetailView):
+    """Просмотр статьи с инкрементом счётчика просмотров."""
+    model = BlogPost
+    template_name = 'blog/blogpost_detail.html'
+    context_object_name = 'post'
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        # Увеличиваем счётчик просмотров
+        obj.views_count += 1
+        obj.save(update_fields=['views_count'])
+
+        # Дополнительное задание: поздравление при 100 просмотрах
+        if obj.views_count == 100:
+            try:
+                send_mail(
+                    subject='Поздравляем! Статья достигла 100 просмотров',
+                    message=(
+                        f'Статья «{obj.title}» достигла 100 просмотров!\n\n'
+                        f'Ссылка: {reverse("blog:post_detail", kwargs={"pk": obj.pk})}'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+
+        return obj
+
+
+class ContentManagerMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Пускает суперюзера и всех, у кого есть право blog.can_manage_blog."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_superuser or user.has_perm('blog.can_manage_blog')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Недостаточно прав для управления блогом.')
+        return redirect('blog:post_list')
+
+
+class BlogPostCreateView(ContentManagerMixin, CreateView):
+    model = BlogPost
+    form_class = BlogPostForm
+    template_name = 'blog/blogpost_form.html'
+    success_url = reverse_lazy('blog:post_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Статья «{self.object.title}» создана!')
+        return response
+
+
+class BlogPostUpdateView(ContentManagerMixin, UpdateView):
+    model = BlogPost
+    form_class = BlogPostForm
+    template_name = 'blog/blogpost_form.html'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Статья «{self.object.title}» обновлена!')
+        return response
+
+    def get_success_url(self):
+        # Перенаправление на просмотр статьи после редактирования
+        return reverse_lazy('blog:post_detail', kwargs={'pk': self.object.pk})
+
+
+class BlogPostDeleteView(ContentManagerMixin, DeleteView):
+    model = BlogPost
+    template_name = 'blog/blogpost_confirm_delete.html'
+    success_url = reverse_lazy('blog:post_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Статья удалена.')
+        return super().form_valid(form)
+

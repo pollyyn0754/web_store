@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -22,6 +23,11 @@ class Category(models.Model):
 
 
 class Product(models.Model):
+
+    class PublicationStatus(models.TextChoices):
+        DRAFT = 'draft', 'Черновик'
+        PUBLISHED = 'published', 'Опубликовано'
+
     name = models.CharField(
         max_length=150,
         verbose_name='Наименование'
@@ -48,6 +54,19 @@ class Product(models.Model):
         decimal_places=2,
         verbose_name='Цена за покупку'
     )
+    status = models.CharField(
+        max_length=20,
+        choices=PublicationStatus.choices,
+        default=PublicationStatus.DRAFT,
+        verbose_name='Статус публикации',
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='products',
+        verbose_name='Владелец',
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания'
@@ -61,9 +80,16 @@ class Product(models.Model):
         verbose_name = 'Продукт'
         verbose_name_plural = 'Продукты'
         ordering = ['name']
+        permissions = [
+            ('can_unpublish_product', 'Может отменять публикацию продукта'),
+        ]
 
     def __str__(self):
         return self.name
+
+    @property
+    def is_published(self) -> bool:
+        return self.status == self.PublicationStatus.PUBLISHED
 
 
 class Contact(models.Model):
