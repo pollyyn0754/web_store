@@ -16,8 +16,10 @@
             <p class="card-text">{{ post.content|linebreaks }}</p>
 
             <a href="{% url 'blog:post_list' %}" class="btn btn-outline-secondary">← К списку</a>
-            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-outline-primary">Редактировать</a>
+            {% if perms.blog.can_manage_blog %}
+            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-outline-secondary">Изменить</a>
             <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-outline-danger">Удалить</a>
+            {% endif %}
         </div>
     </div>
 </div>

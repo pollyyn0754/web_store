@@ -1,6 +1,8 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -53,7 +55,19 @@ class BlogPostDetailView(DetailView):
         return obj
 
 
-class BlogPostCreateView(CreateView):
+class ContentManagerMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Пускает суперюзера и всех, у кого есть право blog.can_manage_blog."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_superuser or user.has_perm('blog.can_manage_blog')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Недостаточно прав для управления блогом.')
+        return redirect('blog:post_list')
+
+
+class BlogPostCreateView(ContentManagerMixin, CreateView):
     model = BlogPost
     form_class = BlogPostForm
     template_name = 'blog/blogpost_form.html'
@@ -65,7 +79,7 @@ class BlogPostCreateView(CreateView):
         return response
 
 
-class BlogPostUpdateView(UpdateView):
+class BlogPostUpdateView(ContentManagerMixin, UpdateView):
     model = BlogPost
     form_class = BlogPostForm
     template_name = 'blog/blogpost_form.html'
@@ -80,7 +94,7 @@ class BlogPostUpdateView(UpdateView):
         return reverse_lazy('blog:post_detail', kwargs={'pk': self.object.pk})
 
 
-class BlogPostDeleteView(DeleteView):
+class BlogPostDeleteView(ContentManagerMixin, DeleteView):
     model = BlogPost
     template_name = 'blog/blogpost_confirm_delete.html'
     success_url = reverse_lazy('blog:post_list')
