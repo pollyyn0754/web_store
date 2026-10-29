@@ -1,7 +1,11 @@
 import io
-import os
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
+from catalog.models import Category, Product
 from PIL import Image
 
 from catalog.forms import ProductForm
@@ -142,3 +146,37 @@ class ProductFormValidationTests(TestCase):
             files={'image': jpg},
         )
         self.assertTrue(form.is_valid(), msg=form.errors)
+
+
+class PermissionTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(email='owner@test.ru', password='pass12345')
+        self.other = User.objects.create_user(email='other@test.ru', password='pass12345')
+        self.moderator = User.objects.create_user(email='mod@test.ru', password='pass12345')
+        mod_group, _ = Group.objects.get_or_create(name='Модератор продуктов')
+        mod_group.permissions.add(
+            Permission.objects.get(codename='can_unpublish_product'),
+            Permission.objects.get(codename='delete_product'),
+        )
+        self.moderator.groups.add(mod_group)
+
+        self.category = Category.objects.create(name='Cat')
+        self.product = Product.objects.create(
+            name='Товар', category=self.category, price=100, owner=self.owner,
+        )
+
+    def test_owner_can_update(self):
+        self.client.login(email='owner@test.ru', password='pass12345')
+        response = self.client.get(reverse('catalog:product_update', args=[self.product.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_other_cannot_update(self):
+        self.client.login(email='other@test.ru', password='pass12345')
+        response = self.client.get(reverse('catalog:product_update', args=[self.product.pk]))
+        self.assertIn(response.status_code, (302, 403))
+
+    def test_moderator_can_delete(self):
+        self.client.login(email='mod@test.ru', password='pass12345')
+        response = self.client.post(reverse('catalog:product_delete', args=[self.product.pk]))
+        self.assertIn(response.status_code, (302, 200))

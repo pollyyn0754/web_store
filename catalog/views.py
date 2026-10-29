@@ -1,4 +1,4 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
@@ -12,6 +12,8 @@ from .models import Product, Contact
 
 
 class HomeView(ListView):
+    """Домашняя страница."""
+
     model = Product
     template_name = "catalog/home.html"
     context_object_name = "page_obj"
@@ -20,17 +22,22 @@ class HomeView(ListView):
 
 
 class ProductDetailView(LoginRequiredMixin, DetailView):
+    """Просмотр карточки продукта."""
+
     model = Product
     template_name = "catalog/product_detail.html"
     context_object_name = "product"
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
+    """Создание продукта."""
+
     model = Product
     form_class = ProductForm
     template_name = "catalog/product_form.html"
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
         messages.success(self.request, f'Товар «{self.object.name}» успешно добавлен!')
         return response
@@ -43,11 +50,33 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         return reverse('catalog:product_detail', kwargs={'pk': self.object.pk})
 
 
-class ProductUpdateView(UpdateView):
+class OwnerOrModeratorMixin(UserPassesTestMixin):
+    """Пропускает владельца продукта или модератора (can_unpublish_product)."""
+
+    def test_func(self):
+        product = self.get_object()
+        user = self.request.user
+        if user == product.owner:
+            return True
+        return user.has_perm('catalog.can_unpublish_product')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'У вас нет прав на это действие.')
+        return redirect('catalog:home')
+
+
+class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorMixin, UpdateView):
     """Редактирование продукта."""
+
     model = Product
     form_class = ProductForm
     template_name = "catalog/product_form.html"
+
+    def get_success_url(self):
+        return reverse(
+            "catalog:product_detail",
+            kwargs={"pk": self.object.pk},
+        )
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -58,11 +87,8 @@ class ProductUpdateView(UpdateView):
         messages.error(self.request, 'Пожалуйста, исправьте ошибки в форме.')
         return super().form_invalid(form)
 
-    def get_success_url(self):
-        return reverse('catalog:product_detail', kwargs={'pk': self.object.pk})
 
-
-class ProductDeleteView(LoginRequiredMixin, DeleteView):
+class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorMixin, DeleteView):
     """Удаление продукта с подтверждением."""
     model = Product
     template_name = "catalog/product_confirm_delete.html"
@@ -73,8 +99,22 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         return super().form_valid(form)
 
 
+class ProductUnpublishView(LoginRequiredMixin, View):
+    """Отмена публикации продукта"""
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        if not request.user.has_perm('catalog.can_unpublish_product'):
+            messages.error(request, 'Недостаточно прав.')
+            return redirect('catalog:product_detail', pk=pk)
+        product.status = Product.PublicationStatus.DRAFT
+        product.save(update_fields=['status'])
+        messages.success(request, 'Публикация отменена.')
+        return redirect('catalog:product_detail', pk=pk)
+
+
 class ContactsView(View):
-    # ... оставляем без изменений ...
+    """Форма обратной связи."""
+
     def get(self, request, *args, **kwargs):
         form = ContactForm()
         contact_info = Contact.objects.first()

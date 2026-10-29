@@ -46,8 +46,18 @@
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <div class="d-flex gap-2">
                             <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">← Назад в каталог</a>
+                            {% if user == product.owner %}
                             <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-outline-primary">Редактировать</a>
+                            {% endif %}
+                            {% if user == product.owner or perms.catalog.can_unpublish_product %}
                             <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-outline-danger">Удалить</a>
+                            {% endif %}
+                            {% if perms.catalog.can_unpublish_product and product.is_published %}
+                            <form method="post" action="{% url 'catalog:product_unpublish' product.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-warning">Отменить публикацию</button>
+                            </form>
+                            {% endif %}
                         </div>
                         <button type="button" class="btn btn-lg btn-outline-primary">Купить</button>
                     </div>

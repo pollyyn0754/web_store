@@ -17,17 +17,25 @@ class UserRegisterView(CreateView):
     success_url = reverse_lazy('users:login')
 
     def form_valid(self, form):
-        user = form.save()
-        # Отправка приветственного письма
+        # super() сохраняет форму один раз и кладёт объект в self.object
+        response = super().form_valid(form)
+        user = self.object
+
         send_mail(
             subject='Добро пожаловать в Skystore!',
-            message=f'Здравствуйте! Вы успешно зарегистрировались на сайте Skystore.\nВаш логин: {user.email}',
+            message=(
+                f'Здравствуйте! Вы успешно зарегистрировались на сайте Skystore.\n'
+                f'Ваш логин: {user.email}'
+            ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
         )
-        messages.success(self.request, 'Регистрация прошла успешно! Теперь вы можете войти.')
-        return super().form_valid(form)
+        messages.success(
+            self.request,
+            'Регистрация прошла успешно! Теперь вы можете войти.'
+        )
+        return response
 
 
 class UserLoginView(LoginView):
@@ -41,13 +49,12 @@ class UserLoginView(LoginView):
 
 
 class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
-    """Редактирование профиля (Доп. задание)."""
+    """Редактирование профиля."""
     form_class = UserProfileForm
     template_name = 'users/profile.html'
     success_url = reverse_lazy('users:profile')
 
     def get_object(self, queryset=None):
-        # Редактируем всегда текущего пользователя
         return self.request.user
 
     def form_valid(self, form):

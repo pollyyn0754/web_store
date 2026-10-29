@@ -6,7 +6,7 @@ from .validators import validate_forbidden_words
 
 
 class ContactForm(forms.Form):
-    # ... оставляем без изменений ...
+    """Форма обратной связи"""
     name = forms.CharField(
         max_length=100, label="Имя",
         widget=forms.TextInput(attrs={
@@ -55,11 +55,9 @@ class ProductForm(forms.ModelForm):
             'price': 'Цена',
         }
 
-    # ---------- Задание 3: единая стилизация через __init__ ----------
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
-            # Bootstrap-стили для всех полей
             css_class = 'form-check-input' if isinstance(field.widget, forms.CheckboxInput) \
                 else ('form-select' if isinstance(field.widget, forms.Select) else 'form-control')
 
@@ -67,7 +65,6 @@ class ProductForm(forms.ModelForm):
             field.widget.attrs['class'] = f'{existing} {css_class}'.strip()
             field.widget.attrs.setdefault('placeholder', field.label or field_name.capitalize())
 
-    # ---------- Задание 1: запрещённые слова ----------
     def clean_name(self):
         name = self.cleaned_data.get('name', '')
         validate_forbidden_words(name)
@@ -78,7 +75,6 @@ class ProductForm(forms.ModelForm):
         validate_forbidden_words(description)
         return description
 
-    # ---------- Задание 2: цена не может быть отрицательной ----------
     def clean_price(self):
         price = self.cleaned_data.get('price')
         if price is None:
@@ -87,14 +83,12 @@ class ProductForm(forms.ModelForm):
             raise ValidationError('Цена не может быть отрицательной.')
         return price
 
-    # ---------- Доп. задание: валидация изображения ----------
     def clean_image(self):
         image = self.cleaned_data.get('image')
 
         if not image:
             return image
 
-        # Проверка расширения
         ext = os.path.splitext(image.name)[1].lower().lstrip('.')
         if ext not in {'jpg', 'jpeg', 'png'}:
             raise ValidationError('Допустимы только файлы форматов JPEG и PNG.')
