@@ -1,14 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.decorators import method_decorator
 from django.contrib import messages
+from django.views.decorators.cache import cache_page
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView, View
 )
 from django.http import HttpResponseRedirect
 
 from .forms import ContactForm, ProductForm
-from .models import Product, Contact
+from .models import Product, Category, Contact
+from .services import CatalogService
 
 
 class HomeView(ListView):
@@ -27,6 +31,10 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
     model = Product
     template_name = "catalog/product_detail.html"
     context_object_name = "product"
+
+    @method_decorator(cache_page(60 * 15))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -110,6 +118,30 @@ class ProductUnpublishView(LoginRequiredMixin, View):
         product.save(update_fields=['status'])
         messages.success(request, 'Публикация отменена.')
         return redirect('catalog:product_detail', pk=pk)
+
+
+class CategoryProductsView(ListView):
+    """Список продуктов в категории."""
+
+    template_name = "catalog/category_products.html"
+    context_object_name = "products"
+    paginate_by = 6
+
+    def get_queryset(self):
+        self.category = get_object_or_404(Category, pk=self.kwargs['pk'])
+        cache_key = f'category_products_{self.category.pk}'
+
+        products = cache.get(cache_key)
+        if products is None:
+            products = list(CatalogService.get_products_by_category(self.category.pk))
+            cache.set(cache_key, products, 60 * 10)  # 10 минут
+
+        return products
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = self.category
+        return context
 
 
 class ContactsView(View):

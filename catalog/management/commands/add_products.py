@@ -16,6 +16,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             Product.objects.all().delete()
             Category.objects.all().delete()
+            call_command('loaddata', 'catalog_fixture.json', verbosity=0)
         self.stdout.write(self.style.SUCCESS('Данные удалены.'))
 
         self.stdout.write('Загружаем catalog_fixture.json...')

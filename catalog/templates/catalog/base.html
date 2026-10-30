@@ -27,11 +27,15 @@
             <div class="col-6 col-md">
                 <h5>Категории</h5>
                 <ul class="list-unstyled text-small">
-                    <li><a class="text-muted" href="#">Рассылки</a></li>
-                    <li><a class="text-muted" href="#">Телеграм боты</a></li>
-                    <li><a class="text-muted" href="#">Полезные утилиты</a></li>
-                    <li><a class="text-muted" href="#">Веб-приложения</a></li>
-                    <li><a class="text-muted" href="#">Микросервисы</a></li>
+                    {% for category in all_categories %}
+                    <li>
+                        <a class="text-muted" href="{% url 'catalog:category_products' category.pk %}">
+                            {{ category.name }}
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="text-muted">Категорий пока нет</li>
+                    {% endfor %}
                 </ul>
             </div>
             <div class="col-6 col-md">

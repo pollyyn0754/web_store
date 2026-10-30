@@ -1,0 +1,50 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}{{ category.name }} — Skystore{% endblock %}
+
+{% block content %}
+<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+    <h1 class="display-4">{{ category.name }}</h1>
+    <p class="lead">Продукты в категории</p>
+</div>
+
+<div class="container">
+    <div class="row text-center g-4">
+        {% for product in products %}
+            <div class="col-12 col-md-6 col-lg-3 d-flex align-items-stretch">
+                <div class="card mb-4 box-shadow w-100 h-100">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h1 class="card-title pricing-card-title fs-3">{{ product.price }} ₽</h1>
+                        <ul class="list-unstyled mt-3 mb-4 text-start m-3 flex-grow-1">
+                            <li>{{ product.description|truncatechars:100 }}</li>
+                        </ul>
+                        <a href="{% url 'catalog:product_detail' product.pk %}"
+                           class="btn btn-lg btn-block btn-outline-primary mt-auto">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted">В этой категории пока нет продуктов.</p>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="Пагинация">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">← Назад</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперёд →</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary mt-3">← Назад в каталог</a>
+</div>
+{% endblock %}

@@ -21,7 +21,8 @@
                         <h1 class="card-title pricing-card-title fs-3">{{ product.price }} ₽</h1>
                         <ul class="list-unstyled mt-3 mb-4 text-start m-3 flex-grow-1">
                             <li>{{ product.description|truncatechars:100 }}</li>
-                            <li>Категория: {{ product.category.name }}</li>
+                            <li>Категория: <a href="{% url 'catalog:category_products' product.category.pk %}"
+                                              class="text-decoration-none">{{ product.category.name }}</a></li>
                         </ul>
                         <a href="{% url 'catalog:product_detail' product.pk %}"
                            class="btn btn-lg btn-block btn-outline-primary mt-auto">Подробнее</a>
